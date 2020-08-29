@@ -20,8 +20,9 @@ extra-source-files:  CHANGELOG.md
 executable discret-math
   main-is:             Main.hs
   other-modules:
-    Math.Logic
-    , Math.PrintOut
+    Math.Logic.Evaluation,
+    Math.Logic.Parsing,
+    Math.Logic.TruthTable
   -- other-modules:
   -- other-extensions:
   build-depends:       

@@ -1,9 +1,8 @@
 module Main where
 
-import Math.Logic as L
-import Math.PrintOut as P
+import Math.Logic.TruthTable as T
 
 main :: IO ()
 main = do
-    let truthTable = L.generateTruthTable "not (p and not q)"
-    P.outputTruthTable truthTable
+    let truthTable = T.generateTruthTable "(not (p and not q))"
+    T.outputTruthTable truthTable

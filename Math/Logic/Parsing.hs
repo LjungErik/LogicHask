@@ -1,79 +1,18 @@
-module Math.Logic 
+module Math.Logic.Parsing
 (
-    TruthValues(axiomsValues, result),
-    TruthTable(expression, truthVars, columns),
-    parseLogicAsRPN,
+    LogicExpression(logicRPN, expVars),
     parseTokens,
-    extractLogicVariables,
-    generateTruthTable
+    parseLogicExpression
 )
 where
 
 import Data.Char (isLetter, isSpace)
-import Data.Map as M
 import Data.Set as S
-
-logicalOr = "or"
-logicalAnd = "and"
-logicalNot = "not"
-logicalImplication = "=>"
-logicalEquivalence = "<=>"
 
 data LogicExpression = LogicExpression {
     logicRPN :: [String],
-    variables :: [String]
+    expVars :: [String]
 } deriving (Show)
-
-data TruthValues = TruthValues {
-    axiomsValues :: [(String, Bool)],
-    result :: Bool
-} deriving (Show)
-
-data TruthTable = TruthTable {
-    expression :: String,
-    truthVars :: [String],
-    columns :: [TruthValues]
-} deriving (Show)
-
-generateTruthTable :: String -> TruthTable
-generateTruthTable str = let exp = parseLogicExpression (parseTokens str) in TruthTable {
-    expression = str,
-    truthVars = variables exp,
-    columns = generateTruthTable' exp
-}
-
-generateTruthTable' :: LogicExpression -> [TruthValues]
-generateTruthTable' exp = generateTruthTable'' (logicRPN exp) (variables exp) [] []
-
-generateTruthTable'' :: [String] -> [String] -> [(String, Bool)] ->  [TruthValues] -> [TruthValues]
-generateTruthTable'' rpn [] t values = do
-                                    let result = evaluateLogicRPN rpn (M.fromList t)
-                                        truth = TruthValues { axiomsValues = t, result = result } in (truth:values)
-generateTruthTable'' rpn (x:xs) t values = generateTruthTable'' rpn xs ((x,True):t) (generateTruthTable'' rpn xs ((x,False):t) values)
-
-imply :: Bool -> Bool -> Bool
-imply True x2 = x2
-imply False x2 = True
-
-evaluateLogicRPN' :: [String] -> (String -> Bool) -> [Bool] -> Bool
-evaluateLogicRPN' [] _ (x:xs) = x
-evaluateLogicRPN' ("not":tokens) truthTable (x:out) = evaluateLogicRPN' tokens (truthTable) ((not x):out)
-evaluateLogicRPN' ("and":tokens) truthTable (x1:x2:out) = evaluateLogicRPN' tokens (truthTable) ((x2 && x1):out)
-evaluateLogicRPN' ("or":tokens) truthTable (x1:x2:out) = evaluateLogicRPN' tokens (truthTable) ((x2 || x1):out)
-evaluateLogicRPN' ("=>":tokens) truthTable (x1:x2:out) = evaluateLogicRPN' tokens (truthTable) ((imply x2 x1):out)
-evaluateLogicRPN' ("<=>":tokens) truthTable (x1:x2:out) = evaluateLogicRPN' tokens (truthTable) ((x2 == x1):out)
-evaluateLogicRPN' (token:tokens) truthTable out = evaluateLogicRPN' tokens (truthTable) ((truthTable token):out)
-
-evaluateLogicRPN :: [String] -> M.Map String Bool -> Bool
-evaluateLogicRPN rpn values = evaluateLogicRPN' rpn (\x -> getValue values x) []
-
-getValue :: M.Map String Bool -> String -> Bool
-getValue m token = case (M.lookup token m) of
-    Just x -> x
-    Nothing -> error "Failed to get value from lookup table"
-
-ensureNoDuplicates :: [String] -> [String]
-ensureNoDuplicates vars = S.toList $ S.fromList vars
 
 parseTokens :: String -> [String]
 parseTokens str = parseTokens' str [] []
@@ -95,10 +34,12 @@ parseTokens' str token tokens
     | otherwise = error ("Invalid character used, no tokens contain character: '" ++ token ++ "'")
     where (c:cs) = str
 
-
 parseLogicExpression :: [String] -> LogicExpression
 parseLogicExpression tokens = let rpn = parseLogicAsRPN tokens
-                                  vars = extractLogicVariables tokens in LogicExpression { logicRPN = rpn, variables = (ensureNoDuplicates vars) }
+                                  vars = extractLogicVariables tokens in LogicExpression { logicRPN = rpn, expVars = (reverse (ensureNoDuplicates vars)) }
+
+parseLogicAsRPN :: [String] -> [String]
+parseLogicAsRPN tokens = parseLogicAsRPN' tokens [] [] 
 
 parseLogicAsRPN' :: [String] -> [String] -> [String] -> [String]
 parseLogicAsRPN' [] [] rpn = reverse rpn
@@ -116,9 +57,6 @@ parseLogicAsRPN' (token:tokens) opStack rpn
         _ -> error "No begining parentheses '(' found, invalid expression"
     | otherwise = parseLogicAsRPN' tokens opStack (token:rpn) 
 
-parseLogicAsRPN :: [String] -> [String]
-parseLogicAsRPN tokens = parseLogicAsRPN' tokens [] [] 
-
 extractLogicVariables' :: [String] -> [String] -> [String]
 extractLogicVariables' [] vars = reverse vars
 extractLogicVariables' (token:tokens) vars 
@@ -127,6 +65,9 @@ extractLogicVariables' (token:tokens) vars
 
 extractLogicVariables :: [String] -> [String]
 extractLogicVariables tokens = extractLogicVariables' tokens []
+
+ensureNoDuplicates :: [String] -> [String]
+ensureNoDuplicates vars = S.toDescList $ S.fromList vars
 
 isLeftParenthesis :: String -> Bool
 isLeftParenthesis "(" = True
