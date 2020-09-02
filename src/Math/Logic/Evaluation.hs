@@ -1,8 +1,7 @@
-module Math.Logic.Evaluation
+module Math.Logic.Evaluation 
 (
     evaluateLogicRPN
-)
-where
+) where
 import Data.Map as M
 
 evaluateLogicRPN :: [String] -> M.Map String Bool -> Bool
