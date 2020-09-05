@@ -21,7 +21,8 @@ library logix
   exposed-modules:
     Math.Logic.Evaluation,
     Math.Logic.Parsing,
-    Math.Logic.TruthTable
+    Math.Logic.TruthTable,
+    Serializer.StringSerializer
   -- other-modules:
   -- other-extensions:
   build-depends:       

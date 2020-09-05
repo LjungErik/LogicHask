@@ -1,16 +1,18 @@
 module Math.Logic.TruthTable
 (
     TruthTable(expression, truthVars, columns),
+    TruthValues(logicValues, result),
     generateTruthTable,
-    outputTruthTable
+    isTautology,
+    isContradiction
 )
 where
-import Data.Map as M
-import Math.Logic.Parsing as P
+import Data.Map as M hiding (map) 
+import Math.Logic.Parsing as P 
 import Math.Logic.Evaluation as E
 
 data TruthValues = TruthValues {
-    axiomsValues :: [(String, Bool)],
+    logicValues :: [(String, Bool)],
     result :: Bool
 } deriving (Show)
 
@@ -34,35 +36,11 @@ generateTruthTable' exp = generateTruthTable'' (P.logicRPN exp) (P.expVars exp) 
 generateTruthTable'' :: [String] -> [String] -> [(String, Bool)] ->  [TruthValues] -> [TruthValues]
 generateTruthTable'' rpn [] t values = do
                                     let result = E.evaluateLogicRPN rpn (M.fromList t)
-                                        truth = TruthValues { axiomsValues = (t), result = result } in (truth:values)
+                                        truth = TruthValues { logicValues = (t), result = result } in (truth:values)
 generateTruthTable'' rpn (x:xs) t values = generateTruthTable'' rpn xs (t ++ [(x,True)]) (generateTruthTable'' rpn xs (t ++ [(x,False)]) values)
 
--- Output a TruthTable to console
+isTautology :: TruthTable -> Bool
+isTautology t = and $ map result $ columns t
 
-outputTruthTable :: TruthTable -> IO ()
-outputTruthTable t = do
-    outputHeader (truthVars t) (expression t)
-    outputTruthValues (columns t)
-
-outputHeader :: [String] -> String -> IO ()
-outputHeader [] exp = putStrLn ("__" ++ exp ++ "__")
-outputHeader (var:variables) exp = do
-                        putStr ("___" ++ var ++ "___|")
-                        outputHeader variables exp
- 
-outputTruthValues :: [TruthValues] -> IO ()
-outputTruthValues [] = putStrLn ""
-outputTruthValues (truth:values) = do
-    printTruths (axiomsValues truth) (result truth)
-    outputTruthValues values
-
-printTruths :: [(String, Bool)] -> Bool -> IO ()
-printTruths [] result = putStrLn (" " ++ (toBoolStr result)  ++ " ")
-printTruths ((_, val):truths) result = do
-                                    putStr (" " ++ (toBoolStr val) ++ " |")
-                                    printTruths truths result
-
-toBoolStr :: Bool -> String
-toBoolStr True  = "TRUE "
-toBoolStr False = "FALSE"
-
+isContradiction :: TruthTable -> Bool
+isContradiction t = and $ map (\x -> not $ result x) $ columns t
